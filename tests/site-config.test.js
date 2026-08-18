@@ -41,6 +41,12 @@ assert.match(
     /bulma/i,
     "config.js stylesheet must point at Bulma"
 );
+assert.strictEqual(typeof storeConfig.repositoryUrl, "string");
+assert.match(
+    storeConfig.repositoryUrl,
+    /^https?:\/\//,
+    "config.js repositoryUrl must be an absolute http(s) URL"
+);
 
 const expectedUrl = storeConfig.url.replace(/\/+$/, "");
 const expectedPrefix = pathPrefixFromBaseUrl(expectedUrl);
@@ -71,6 +77,7 @@ assert.strictEqual(site.description, storeConfig.description);
 assert.strictEqual(site.keywords, storeConfig.keywords.join(", "));
 assert.strictEqual(site.stylesheet, storeConfig.stylesheet);
 assert.strictEqual(site.url, expectedUrl);
+assert.strictEqual(site.repositoryUrl, storeConfig.repositoryUrl);
 assert.strictEqual(site.ogType, storeConfig.ogType || "website");
 assert.strictEqual(site.ogImage, storeConfig.ogImage || "");
 
@@ -80,6 +87,7 @@ logger.info("test", "site data is loaded from root config.js", {
     keywords: site.keywords,
     stylesheet: storeConfig.stylesheet,
     url: site.url,
+    repositoryUrl: site.repositoryUrl,
     pathPrefix: expectedPrefix,
     ogType: site.ogType,
 });
