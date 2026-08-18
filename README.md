@@ -153,9 +153,9 @@ npx lefthook run pre-commit
 One workflow (`.github/workflows/ci.yml`) runs on pull requests, pushes to `main`, and `workflow_dispatch`:
 
 1. **Validate** — `npm run check` then `npm run test:code`. A failing template (missing fields, bad logo, undeclared `$$cap_*`, catalog merge conflict) stops the pipeline.
-2. **Build** — resolve the public site URL, then `npm run build` and `npm run verify`.
+2. **Build** — `npm run build` and `npm run verify`, using `url` from `config.js`.
 3. **Deploy** — on `main` only, upload `dist/` and publish GitHub Pages.
 
-The build step sets `SITE_URL=https://bestony.github.io/caprover-repository` and `PATH_PREFIX=/caprover-repository/` so catalog links work on a project Pages site.
+Catalog links, logo URLs, and Eleventy's path prefix come from `config.js` `url`. Change that value to move the store or use a custom domain.
 
-For a custom domain, set repository Variables `SITE_URL` and optionally `PATH_PREFIX`.
+`SITE_URL` and `PATH_PREFIX` remain optional environment overrides; the workflow does not set them.
