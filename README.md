@@ -115,7 +115,8 @@ Do not put a `logoUrl` in the YAML. The build always publishes the colocated log
 npm install
 npm run check          # validate templates and prove they merge into one catalog
 npm run check -- mysql # check one app
-npm test               # unit tests, check, Eleventy build, dist verify
+npm run test:code      # syntax + unit tests, no Eleventy build
+npm test               # code tests, check, Eleventy build, dist verify
 npm start              # Eleventy dev server
 npm run build          # write dist/
 ```
@@ -130,6 +131,22 @@ The checker reports:
 - undeclared `$$cap_*` tokens
 - logo type and whether the image can be decoded
 - whether every valid app can be merged into one `v4/list` and one `v4/logos/<name>.png` without collisions
+
+## Git hooks
+
+`npm install` installs [Lefthook](https://lefthook.dev/) hooks. Each pre-commit job runs only when its files are staged, so the same work is not repeated:
+
+| Staged files | What runs |
+| --- | --- |
+| `templates/**` | `npm run check`, then `npm run build` and `npm run verify` |
+| `src/**` or `eleventy.config.js` | `npm run build` and `npm run verify` (skipped if a templates change already does this) |
+| `lib/`, `scripts/`, `tests/`, `config.js`, or `package.json` | `npm run test:code` |
+
+A commit that touches templates and JavaScript runs the template build path and `test:code`, not `npm test` (which would run check and build twice). Docs-only commits skip the hook. Merge and rebase commits skip it too. To run it by hand:
+
+```bash
+npx lefthook run pre-commit
+```
 
 ## CI
 

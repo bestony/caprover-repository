@@ -3,3 +3,4 @@ dist/
 .gitlock
 .env
 .env.*
+lefthook-local.yml

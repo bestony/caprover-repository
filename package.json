@@ -8,9 +8,12 @@
     "build": "eleventy",
     "build:ghpages": "eleventy",
     "check": "node scripts/check-templates.js",
+    "check:syntax": "node scripts/check-syntax.js",
     "validate": "node scripts/check-templates.js",
     "verify": "node scripts/verify-build.js",
-    "test": "node tests/templates.test.js && node tests/check-templates.test.js && node tests/site-config.test.js && node scripts/check-templates.js && eleventy && node scripts/verify-build.js"
+    "test:code": "node scripts/check-syntax.js && node tests/templates.test.js && node tests/check-templates.test.js && node tests/site-config.test.js && node tests/precommit.test.js",
+    "test": "npm run test:code && node scripts/check-templates.js && eleventy && node scripts/verify-build.js",
+    "prepare": "lefthook install"
   },
   "keywords": [
     "caprover",
@@ -28,5 +31,8 @@
     "@iarna/toml": "^2.2.5",
     "js-yaml": "^4.3.1",
     "sharp": "^0.35.3"
+  },
+  "devDependencies": {
+    "lefthook": "^2.1.10"
   }
 }
