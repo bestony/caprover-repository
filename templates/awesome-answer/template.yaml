@@ -1,0 +1,81 @@
+captainVersion: 4
+services:
+    $$cap_appname:
+        image: ghcr.io/thematrixcrop/awesome-answer:$$cap_app_version
+        volumes:
+            - $$cap_appname-data:/data
+        restart: always
+        environment:
+            AUTO_INSTALL: 'true'
+            DB_TYPE: sqlite3
+            DB_FILE: /data/sqlite3/answer.db
+            LANGUAGE: $$cap_language
+            SITE_NAME: $$cap_site_name
+            SITE_URL: https://$$cap_appname.$$cap_root_domain
+            CONTACT_EMAIL: $$cap_contact_email
+            ADMIN_NAME: $$cap_admin_name
+            ADMIN_PASSWORD: $$cap_admin_password
+            ADMIN_EMAIL: $$cap_admin_email
+            EXTERNAL_CONTENT_DISPLAY: $$cap_external_content_display
+caproverOneClickApp:
+    variables:
+        - id: $$cap_app_version
+          label: App Version
+          defaultValue: v2.0.2_20260721
+          description: Tag from https://github.com/thematrixcrop/Awesome-Answer/pkgs/container/awesome-answer
+          validRegex: /^([^\s\/])+$/
+        - id: $$cap_language
+          label: Language
+          defaultValue: zh_CN
+          description: Install language from Answer i18n options (zh_CN, en_US). Underscore form.
+          validRegex: /^[A-Za-z]{2}[-_][A-Za-z]{2}$/
+        - id: $$cap_site_name
+          label: Site Name
+          defaultValue: Awesome Answer
+          description: Display name for the site
+          validRegex: /.{1,}/
+        - id: $$cap_contact_email
+          label: Contact Email
+          defaultValue: admin@example.com
+          description: Public contact email
+          validRegex: /.+@.+/
+        - id: $$cap_admin_name
+          label: Admin Username
+          defaultValue: admin
+          description: Initial admin account name
+          validRegex: /^[A-Za-z0-9_-]{3,}$/
+        - id: $$cap_admin_password
+          label: Admin Password
+          defaultValue: $$cap_gen_random_hex(16)
+          description: Initial admin password. Save it before leaving this form.
+          validRegex: /^[^\s@:/?#%]{8,}$/
+        - id: $$cap_admin_email
+          label: Admin Email
+          defaultValue: admin@example.com
+          description: Initial admin email
+          validRegex: /.+@.+/
+        - id: $$cap_external_content_display
+          label: External Content Display
+          defaultValue: always_display
+          description: How to show third-party content (always_display or ask_before_display)
+          validRegex: /^(always_display|ask_before_display)$/
+    instructions:
+        start: >-
+            Awesome Answer is a community Q&A platform (image
+            ghcr.io/thematrixcrop/awesome-answer — not official Apache Answer).
+            This variant uses embedded SQLite under /data.
+
+            After deploy, enable HTTPS on the web app. First boot runs AUTO_INSTALL.
+        end: >-
+            Awesome Answer is deployed.
+
+            Site: https://$$cap_appname.$$cap_root_domain
+            Login with the admin username and password you set.
+
+            Enable HTTPS. SQLite lives at /data/sqlite3/answer.db in the app volume.
+            If the first boot shows the install wizard instead of the site, restart
+            the web app once.
+    displayName: Awesome Answer
+    isOfficial: false
+    description: Community Awesome Answer Q&A with embedded SQLite — one-click CapRover deploy
+    documentation: Taken from https://github.com/thematrixcrop/Awesome-Answer and https://answer.apache.org/zh-CN/docs/env

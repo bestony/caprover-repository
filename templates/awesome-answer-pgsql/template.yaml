@@ -1,0 +1,118 @@
+captainVersion: 4
+services:
+    $$cap_appname-db:
+        image: postgres:$$cap_pg_version
+        volumes:
+            - $$cap_appname-db-data:/var/lib/postgresql/data
+        restart: always
+        environment:
+            POSTGRES_DB: $$cap_db_name
+            POSTGRES_USER: $$cap_db_user
+            POSTGRES_PASSWORD: $$cap_db_pass
+        caproverExtra:
+            notExposeAsWebApp: 'true'
+    $$cap_appname:
+        image: ghcr.io/thematrixcrop/awesome-answer:$$cap_app_version
+        volumes:
+            - $$cap_appname-data:/data
+        restart: always
+        depends_on:
+            - $$cap_appname-db
+        environment:
+            AUTO_INSTALL: 'true'
+            DB_TYPE: postgres
+            DB_HOST: srv-captain--$$cap_appname-db:5432
+            DB_NAME: $$cap_db_name
+            DB_USERNAME: $$cap_db_user
+            DB_PASSWORD: $$cap_db_pass
+            LANGUAGE: $$cap_language
+            SITE_NAME: $$cap_site_name
+            SITE_URL: https://$$cap_appname.$$cap_root_domain
+            CONTACT_EMAIL: $$cap_contact_email
+            ADMIN_NAME: $$cap_admin_name
+            ADMIN_PASSWORD: $$cap_admin_password
+            ADMIN_EMAIL: $$cap_admin_email
+            EXTERNAL_CONTENT_DISPLAY: $$cap_external_content_display
+caproverOneClickApp:
+    variables:
+        - id: $$cap_app_version
+          label: App Version
+          defaultValue: v2.0.2_20260721
+          description: Tag from https://github.com/thematrixcrop/Awesome-Answer/pkgs/container/awesome-answer
+          validRegex: /^([^\s\/])+$/
+        - id: $$cap_pg_version
+          label: PostgreSQL Version
+          defaultValue: 17-alpine
+          description: Tag from https://hub.docker.com/_/postgres/tags
+          validRegex: /^([^\s\/])+$/
+        - id: $$cap_db_name
+          label: Database Name
+          defaultValue: answer
+          description: PostgreSQL database name
+          validRegex: /^[A-Za-z0-9_]+$/
+        - id: $$cap_db_user
+          label: Database User
+          defaultValue: answer
+          description: PostgreSQL username
+          validRegex: /^[A-Za-z0-9_]+$/
+        - id: $$cap_db_pass
+          label: Database Password
+          defaultValue: $$cap_gen_random_hex(24)
+          description: 'PostgreSQL password. Avoid @, :, /, ?, #, and %.'
+          validRegex: /^[^\s@:/?#%]{12,}$/
+        - id: $$cap_language
+          label: Language
+          defaultValue: zh_CN
+          description: Install language from Answer i18n options (zh_CN, en_US). Underscore form.
+          validRegex: /^[A-Za-z]{2}[-_][A-Za-z]{2}$/
+        - id: $$cap_site_name
+          label: Site Name
+          defaultValue: Awesome Answer
+          description: Display name for the site
+          validRegex: /.{1,}/
+        - id: $$cap_contact_email
+          label: Contact Email
+          defaultValue: admin@example.com
+          description: Public contact email
+          validRegex: /.+@.+/
+        - id: $$cap_admin_name
+          label: Admin Username
+          defaultValue: admin
+          description: Initial admin account name
+          validRegex: /^[A-Za-z0-9_-]{3,}$/
+        - id: $$cap_admin_password
+          label: Admin Password
+          defaultValue: $$cap_gen_random_hex(16)
+          description: Initial admin password. Save it before leaving this form.
+          validRegex: /^[^\s@:/?#%]{8,}$/
+        - id: $$cap_admin_email
+          label: Admin Email
+          defaultValue: admin@example.com
+          description: Initial admin email
+          validRegex: /.+@.+/
+        - id: $$cap_external_content_display
+          label: External Content Display
+          defaultValue: always_display
+          description: How to show third-party content (always_display or ask_before_display)
+          validRegex: /^(always_display|ask_before_display)$/
+    instructions:
+        start: >-
+            Awesome Answer is a community Q&A platform (image
+            ghcr.io/thematrixcrop/awesome-answer — not official Apache Answer).
+            This variant deploys the app plus PostgreSQL.
+
+            After deploy, enable HTTPS on the web app. First boot runs AUTO_INSTALL
+            once PostgreSQL is ready.
+        end: >-
+            Awesome Answer is deployed.
+
+            Site: https://$$cap_appname.$$cap_root_domain
+            Database (internal): srv-captain--$$cap_appname-db:5432
+            Login with the admin username and password you set.
+
+            Enable HTTPS. If AUTO_INSTALL did not finish because PostgreSQL was
+            still starting, restart the web app once so it can reconnect.
+    displayName: Awesome Answer (PGSQL)
+    isOfficial: false
+    description: Community Awesome Answer Q&A with PostgreSQL — one-click CapRover deploy
+    documentation: Taken from https://github.com/thematrixcrop/Awesome-Answer and https://answer.apache.org/zh-CN/docs/env
