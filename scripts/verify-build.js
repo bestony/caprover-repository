@@ -53,15 +53,30 @@ try {
     }
 
     const catalogHtml = fs.readFileSync(catalogPage, "utf8");
-    logger.debug("verify", "checking catalog page copy from config.js", {
+    logger.debug("verify", "checking catalog page copy and Bulma markup", {
         title: storeConfig.title,
         description: storeConfig.description,
+        stylesheet: storeConfig.stylesheet,
     });
     if (!catalogHtml.includes(storeConfig.title)) {
         throw new Error("dist/index.html is missing config.js title");
     }
     if (!catalogHtml.includes(storeConfig.description)) {
         throw new Error("dist/index.html is missing config.js description");
+    }
+    if (!catalogHtml.includes(storeConfig.stylesheet)) {
+        throw new Error("dist/index.html is missing the Bulma stylesheet from config.js");
+    }
+    if (/<style[\s>]/i.test(catalogHtml)) {
+        throw new Error("dist/index.html must not include custom CSS");
+    }
+    ["hero is-link", "section", "box", "media", "footer"].forEach((className) => {
+        if (!catalogHtml.includes(`class="${className}`)) {
+            throw new Error(`dist/index.html is missing Bulma class ${className}`);
+        }
+    });
+    if (apps.some((app) => app.isOfficial) && !catalogHtml.includes("tag is-info is-light")) {
+        throw new Error("dist/index.html is missing the official-image Bulma tag");
     }
 
     const nojekyll = path.join(DIST_DIR, ".nojekyll");

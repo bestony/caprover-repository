@@ -2,28 +2,53 @@
 layout: layout.njk
 permalink: /
 ---
-<h1>{{ site.title }}</h1>
-<p class="lede">{{ site.description }}</p>
-
-<section class="grid">
-    {% for app in apps %}
-        <article class="card">
-            <img src="{{ app.logoPath }}" alt="{{ app.displayName }} logo" width="88" height="88">
-            <div>
-                <h2>
-                    {{ app.displayName }}
-                    {% if app.isOfficial %}<span class="badge">Official image</span>{% endif %}
-                </h2>
-                <p class="meta">{{ app.description }}</p>
-                <p>
-                    Definition:
-                    <a href="{{ site.url }}/v4/apps/{{ app.name }}">/v4/apps/{{ app.name }}</a>
-                    · Logo:
-                    <a href="{{ app.logoPath }}">{{ app.logoUrl }}</a>
-                </p>
-            </div>
-        </article>
-    {% endfor %}
+<section class="hero is-link">
+    <div class="hero-body">
+        <div class="container is-max-desktop">
+            <h1 class="title">{{ site.title }}</h1>
+            <p class="subtitle">{{ site.description }}</p>
+        </div>
+    </div>
 </section>
 
-<p class="lede">Catalog JSON: <a href="{{ site.url }}/v4/list"><code>/v4/list</code></a></p>
+<section class="section">
+    <div class="container is-max-desktop">
+        {% for app in apps %}
+            <div class="box">
+                <article class="media">
+                    <div class="media-left">
+                        <figure class="image is-96x96">
+                            <img src="{{ app.logoPath }}" alt="{{ app.displayName }} logo" width="96" height="96">
+                        </figure>
+                    </div>
+                    <div class="media-content">
+                        <p class="title is-4">
+                            {{ app.displayName }}
+                            {% if app.isOfficial %}
+                                <span class="tag is-info is-light">Official image</span>
+                            {% endif %}
+                        </p>
+                        <p class="subtitle is-6">{{ app.description }}</p>
+                        <div class="content">
+                            <p>
+                                Definition:
+                                <a href="{{ site.url }}/v4/apps/{{ app.name }}">/v4/apps/{{ app.name }}</a>
+                                · Logo:
+                                <a href="{{ app.logoPath }}">{{ app.logoUrl }}</a>
+                            </p>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+
+<footer class="footer">
+    <div class="content has-text-centered">
+        <p>
+            Catalog JSON:
+            <a href="{{ site.url }}/v4/list"><code>/v4/list</code></a>
+        </p>
+    </div>
+</footer>
