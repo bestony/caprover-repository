@@ -103,6 +103,15 @@ try {
     const catalog = toCatalog(yamlApps);
     assert.deepStrictEqual(catalog.oneClickApps[0].logoUrl, "mysql.png");
 
+    const prefixedApps = loadApps({
+        templatesDir: tmpRoot,
+        pathPrefix: "/caprover-repository/",
+    });
+    assert.strictEqual(
+        prefixedApps[0].logoPath,
+        "/caprover-repository/v4/logos/mysql.png"
+    );
+
     const tomlSource = [
         "captainVersion = 4",
         "",

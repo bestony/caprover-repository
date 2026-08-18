@@ -51,6 +51,11 @@ try {
         throw new Error("Missing catalog page dist/index.html");
     }
 
+    const nojekyll = path.join(DIST_DIR, ".nojekyll");
+    if (!fs.existsSync(nojekyll)) {
+        throw new Error("Missing dist/.nojekyll for GitHub Pages");
+    }
+
     logger.info("verify", "build output verified", {
         apps: apps.map((app) => app.name),
         listPath: "dist/v4/list",

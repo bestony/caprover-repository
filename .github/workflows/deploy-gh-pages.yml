@@ -1,0 +1,71 @@
+name: Deploy to GitHub Pages
+
+on:
+    push:
+        branches: [main]
+    workflow_dispatch:
+
+permissions:
+    contents: read
+    pages: write
+    id-token: write
+
+concurrency:
+    group: github-pages
+    cancel-in-progress: false
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v7
+
+            - uses: actions/setup-node@v7
+              with:
+                  node-version: 20
+                  cache: npm
+
+            - name: Resolve GitHub Pages URL
+              env:
+                  CUSTOM_SITE_URL: ${{ vars.SITE_URL }}
+                  CUSTOM_PATH_PREFIX: ${{ vars.PATH_PREFIX }}
+              run: |
+                  set -eu
+                  OWNER="${GITHUB_REPOSITORY_OWNER}"
+                  REPO="${GITHUB_REPOSITORY#*/}"
+                  if [ -n "${CUSTOM_SITE_URL}" ]; then
+                      SITE_URL="${CUSTOM_SITE_URL%/}"
+                      PATH_PREFIX="${CUSTOM_PATH_PREFIX:-/}"
+                  elif [ "${REPO}" = "${OWNER}.github.io" ]; then
+                      SITE_URL="https://${OWNER}.github.io"
+                      PATH_PREFIX="/"
+                  else
+                      SITE_URL="https://${OWNER}.github.io/${REPO}"
+                      PATH_PREFIX="/${REPO}/"
+                  fi
+                  echo "SITE_URL=${SITE_URL}" >> "${GITHUB_ENV}"
+                  echo "PATH_PREFIX=${PATH_PREFIX}" >> "${GITHUB_ENV}"
+                  echo "Resolved GitHub Pages SITE_URL=${SITE_URL} PATH_PREFIX=${PATH_PREFIX}"
+
+            - run: npm ci
+
+            - name: Validate and build
+              run: npm test
+              env:
+                  SITE_URL: ${{ env.SITE_URL }}
+                  PATH_PREFIX: ${{ env.PATH_PREFIX }}
+                  LOG_LEVEL: info
+
+            - uses: actions/upload-pages-artifact@v5
+              with:
+                  path: dist
+
+    deploy:
+        needs: build
+        runs-on: ubuntu-latest
+        environment:
+            name: github-pages
+            url: ${{ steps.deployment.outputs.page_url }}
+        steps:
+            - id: deployment
+              uses: actions/deploy-pages@v5
