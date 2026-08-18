@@ -131,8 +131,10 @@ The checker reports:
 - logo type and whether the image can be decoded
 - whether every valid app can be merged into one `v4/list` and one `v4/logos/<name>.png` without collisions
 
-## Publishing
+## CI
 
-Pushes to `main` run GitHub Actions: install, `npm test`, upload `dist/`, deploy Pages. The workflow sets `SITE_URL=https://bestony.github.io/caprover-repository` and `PATH_PREFIX=/caprover-repository/` so catalog links work on a project Pages site.
+Pull requests and pushes to `main` run **Check templates**: `npm run check` then `npm test`. A failing template (missing fields, bad logo, undeclared `$$cap_*`, catalog merge conflict) blocks the check.
+
+Pushes to `main` also run **Deploy to GitHub Pages**: install, `npm test`, upload `dist/`, deploy Pages. That workflow sets `SITE_URL=https://bestony.github.io/caprover-repository` and `PATH_PREFIX=/caprover-repository/` so catalog links work on a project Pages site.
 
 For a custom domain, set repository Variables `SITE_URL` and optionally `PATH_PREFIX`.
