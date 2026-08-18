@@ -1,21 +1,43 @@
-name: Deploy to GitHub Pages
+name: CI
 
 on:
+    pull_request:
     push:
         branches: [main]
     workflow_dispatch:
 
 permissions:
     contents: read
-    pages: write
-    id-token: write
 
 concurrency:
-    group: github-pages
-    cancel-in-progress: false
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
+    validate:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v7
+
+            - uses: actions/setup-node@v7
+              with:
+                  node-version: 20
+                  cache: npm
+
+            - run: npm ci
+
+            - name: Check template format and catalog merge
+              run: npm run check
+              env:
+                  LOG_LEVEL: info
+
+            - name: Run unit tests
+              run: npm run test:code
+              env:
+                  LOG_LEVEL: info
+
     build:
+        needs: validate
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v7
@@ -49,20 +71,25 @@ jobs:
 
             - run: npm ci
 
-            - name: Validate and build
-              run: npm test
+            - name: Build and verify catalog
+              run: npm run build && npm run verify
               env:
                   SITE_URL: ${{ env.SITE_URL }}
                   PATH_PREFIX: ${{ env.PATH_PREFIX }}
                   LOG_LEVEL: info
 
-            - uses: actions/upload-pages-artifact@v5
+            - if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+              uses: actions/upload-pages-artifact@v5
               with:
                   path: dist
 
     deploy:
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         needs: build
         runs-on: ubuntu-latest
+        permissions:
+            pages: write
+            id-token: write
         environment:
             name: github-pages
             url: ${{ steps.deployment.outputs.page_url }}

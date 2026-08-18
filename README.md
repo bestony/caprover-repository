@@ -150,8 +150,12 @@ npx lefthook run pre-commit
 
 ## CI
 
-Pull requests and pushes to `main` run **Check templates**: `npm run check` then `npm test`. A failing template (missing fields, bad logo, undeclared `$$cap_*`, catalog merge conflict) blocks the check.
+One workflow (`.github/workflows/ci.yml`) runs on pull requests, pushes to `main`, and `workflow_dispatch`:
 
-Pushes to `main` also run **Deploy to GitHub Pages**: install, `npm test`, upload `dist/`, deploy Pages. That workflow sets `SITE_URL=https://bestony.github.io/caprover-repository` and `PATH_PREFIX=/caprover-repository/` so catalog links work on a project Pages site.
+1. **Validate** — `npm run check` then `npm run test:code`. A failing template (missing fields, bad logo, undeclared `$$cap_*`, catalog merge conflict) stops the pipeline.
+2. **Build** — resolve the public site URL, then `npm run build` and `npm run verify`.
+3. **Deploy** — on `main` only, upload `dist/` and publish GitHub Pages.
+
+The build step sets `SITE_URL=https://bestony.github.io/caprover-repository` and `PATH_PREFIX=/caprover-repository/` so catalog links work on a project Pages site.
 
 For a custom domain, set repository Variables `SITE_URL` and optionally `PATH_PREFIX`.
