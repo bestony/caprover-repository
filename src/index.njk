@@ -7,6 +7,18 @@ permalink: /
         <div class="container is-max-desktop">
             <h1 class="title">{{ site.title }}</h1>
             <p class="subtitle">{{ site.description }}</p>
+            <div class="buttons">
+                <button
+                    type="button"
+                    class="button is-light"
+                    id="copy-repository-url"
+                    data-default-label="COPY Repository URL"
+                    data-copied-label="Copied"
+                    aria-live="polite"
+                >
+                    COPY Repository URL
+                </button>
+            </div>
         </div>
     </div>
 </section>
@@ -29,14 +41,6 @@ permalink: /
                             {% endif %}
                         </p>
                         <p class="subtitle is-6">{{ app.description }}</p>
-                        <div class="content">
-                            <p>
-                                Definition:
-                                <a href="{{ site.url }}/v4/apps/{{ app.name }}">/v4/apps/{{ app.name }}</a>
-                                · Logo:
-                                <a href="{{ app.logoPath }}">{{ app.logoUrl }}</a>
-                            </p>
-                        </div>
                     </div>
                 </article>
             </div>
@@ -52,3 +56,94 @@ permalink: /
         </p>
     </div>
 </footer>
+<script>
+(function () {
+    var button = document.getElementById("copy-repository-url");
+    if (!button) {
+        console.error("[catalog] copy-repository-url button is missing");
+        return;
+    }
+
+    function currentRepositoryUrl() {
+        var url = new URL(window.location.href);
+        url.hash = "";
+        url.search = "";
+        var pathname = url.pathname.replace(/\/index\.html$/i, "");
+        if (pathname.length > 1 && pathname.endsWith("/")) {
+            pathname = pathname.slice(0, -1);
+        }
+        url.pathname = pathname || "/";
+        if (url.pathname === "/") {
+            return url.origin;
+        }
+        return url.origin + url.pathname;
+    }
+
+    function copyToClipboard(text) {
+        if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+            return navigator.clipboard.writeText(text).catch(function (error) {
+                console.warn("[catalog] clipboard api failed, falling back", {
+                    error: error && error.message ? error.message : String(error),
+                });
+                return copyWithTextarea(text);
+            });
+        }
+        return copyWithTextarea(text);
+    }
+
+    function copyWithTextarea(text) {
+        var textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "fixed";
+        textarea.style.top = "0";
+        textarea.style.left = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        var ok = false;
+        try {
+            ok = document.execCommand("copy");
+        } finally {
+            document.body.removeChild(textarea);
+        }
+        if (!ok) {
+            return Promise.reject(new Error("document.execCommand('copy') failed"));
+        }
+        return Promise.resolve();
+    }
+
+    var resetTimer = null;
+    function resetLabel() {
+        button.textContent = button.getAttribute("data-default-label") || "COPY Repository URL";
+    }
+
+    button.addEventListener("click", function () {
+        var url = currentRepositoryUrl();
+        console.debug("[catalog] copying repository url", {
+            href: window.location.href,
+            url: url,
+        });
+        copyToClipboard(url)
+            .then(function () {
+                console.info("[catalog] repository url copied", { url: url });
+                button.textContent = button.getAttribute("data-copied-label") || "Copied";
+                if (resetTimer) {
+                    window.clearTimeout(resetTimer);
+                }
+                resetTimer = window.setTimeout(resetLabel, 2000);
+            })
+            .catch(function (error) {
+                console.error("[catalog] failed to copy repository url", {
+                    url: url,
+                    error: error && error.message ? error.message : String(error),
+                });
+                button.textContent = "Copy failed";
+                if (resetTimer) {
+                    window.clearTimeout(resetTimer);
+                }
+                resetTimer = window.setTimeout(resetLabel, 2000);
+            });
+    });
+})();
+</script>

@@ -78,6 +78,12 @@ try {
     if (apps.some((app) => app.isOfficial) && !catalogHtml.includes("tag is-info is-light")) {
         throw new Error("dist/index.html is missing the official-image Bulma tag");
     }
+    if (!catalogHtml.includes('id="copy-repository-url"') || !catalogHtml.includes("COPY Repository URL")) {
+        throw new Error("dist/index.html is missing the COPY Repository URL button");
+    }
+    if (catalogHtml.includes("Definition:") || /Logo:\s*</.test(catalogHtml)) {
+        throw new Error("dist/index.html should not list per-app Definition or Logo links");
+    }
 
     const nojekyll = path.join(DIST_DIR, ".nojekyll");
     if (!fs.existsSync(nojekyll)) {
