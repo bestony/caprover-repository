@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title or site.title }}</title>
+    <meta name="description" content="{{ description or site.description }}">
+    <style>
+        :root {
+            color-scheme: light;
+            --bg: #f4f7fb;
+            --card: #ffffff;
+            --ink: #122033;
+            --muted: #5b6b7c;
+            --line: #d7e0ea;
+            --accent: #1f6feb;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: "Segoe UI", system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--ink);
+            line-height: 1.5;
+        }
+        main {
+            width: min(920px, calc(100% - 32px));
+            margin: 40px auto;
+        }
+        h1 { margin: 0 0 8px; font-size: 2rem; }
+        .lede { color: var(--muted); margin: 0 0 28px; }
+        .grid {
+            display: grid;
+            gap: 16px;
+        }
+        .card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 88px 1fr;
+            gap: 18px;
+            align-items: start;
+        }
+        .card img {
+            width: 88px;
+            height: 88px;
+            object-fit: contain;
+            background: #f8fbff;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 8px;
+        }
+        .card h2 { margin: 0 0 6px; font-size: 1.35rem; }
+        .meta { color: var(--muted); margin: 0 0 10px; }
+        .badge {
+            display: inline-block;
+            margin-left: 8px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: #e7f0ff;
+            color: var(--accent);
+            font-size: 0.75rem;
+            vertical-align: middle;
+        }
+        a { color: var(--accent); }
+        code { font-size: 0.95em; }
+        @media (max-width: 640px) {
+            .card { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        {{ content | safe }}
+    </main>
+</body>
+</html>
