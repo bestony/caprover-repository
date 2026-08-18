@@ -105,6 +105,7 @@ try {
 
     const prefixedApps = loadApps({
         templatesDir: tmpRoot,
+        baseUrl: "",
         pathPrefix: "/caprover-repository/",
     });
     assert.strictEqual(
