@@ -12,6 +12,7 @@ function eleventyPathPrefix() {
 module.exports = function (eleventyConfig) {
     eleventyConfig.configureErrorReporting({ allowMissingExtensions: true });
     eleventyConfig.addWatchTarget("templates/");
+    eleventyConfig.addWatchTarget("config.js");
 
     eleventyConfig.on("eleventy.before", ({ directories }) => {
         logger.info("eleventy", "build starting", {

@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const { loadApps, toCatalog } = require("../lib/apps");
 const logger = require("../lib/logger");
+const storeConfig = require("../config");
 
 const DIST_DIR = path.join(__dirname, "..", "dist");
 
@@ -49,6 +50,18 @@ try {
     const catalogPage = path.join(DIST_DIR, "index.html");
     if (!fs.existsSync(catalogPage)) {
         throw new Error("Missing catalog page dist/index.html");
+    }
+
+    const catalogHtml = fs.readFileSync(catalogPage, "utf8");
+    logger.debug("verify", "checking catalog page copy from config.js", {
+        title: storeConfig.title,
+        description: storeConfig.description,
+    });
+    if (!catalogHtml.includes(storeConfig.title)) {
+        throw new Error("dist/index.html is missing config.js title");
+    }
+    if (!catalogHtml.includes(storeConfig.description)) {
+        throw new Error("dist/index.html is missing config.js description");
     }
 
     const nojekyll = path.join(DIST_DIR, ".nojekyll");
