@@ -7,9 +7,10 @@
     "start": "eleventy --serve",
     "build": "eleventy",
     "build:ghpages": "eleventy",
-    "validate": "node scripts/validate-apps.js",
+    "check": "node scripts/check-templates.js",
+    "validate": "node scripts/check-templates.js",
     "verify": "node scripts/verify-build.js",
-    "test": "node tests/templates.test.js && node scripts/validate-apps.js && eleventy && node scripts/verify-build.js"
+    "test": "node tests/templates.test.js && node tests/check-templates.test.js && node scripts/check-templates.js && eleventy && node scripts/verify-build.js"
   },
   "keywords": [
     "caprover",
