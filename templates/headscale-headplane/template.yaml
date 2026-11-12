@@ -1,0 +1,112 @@
+captainVersion: 4
+services:
+    $$cap_appname:
+        image: headscale/headscale:$$cap_headscale_version
+        # CapRover maps `command` to the container entrypoint, so the binary
+        # path must be included (the image is distroless, built with ko).
+        command:
+            - /ko-app/headscale
+            - serve
+        volumes:
+            - $$cap_appname-data:/var/lib/headscale
+        restart: always
+        # No config.yaml is mounted: headscale falls back to defaults and reads
+        # every setting below from HEADSCALE_* environment variables.
+        environment:
+            HEADSCALE_SERVER_URL: https://$$cap_appname.$$cap_root_domain
+            HEADSCALE_LISTEN_ADDR: 0.0.0.0:8080
+            HEADSCALE_METRICS_LISTEN_ADDR: 127.0.0.1:9090
+            HEADSCALE_TRUSTED_PROXIES: 10.0.0.0/8
+            HEADSCALE_NOISE_PRIVATE_KEY_PATH: /var/lib/headscale/noise_private.key
+            HEADSCALE_PREFIXES_V4: 100.64.0.0/10
+            HEADSCALE_PREFIXES_V6: fd7a:115c:a1e0::/48
+            HEADSCALE_DATABASE_TYPE: sqlite
+            HEADSCALE_DATABASE_SQLITE_PATH: /var/lib/headscale/db.sqlite
+            HEADSCALE_DERP_URLS: https://controlplane.tailscale.com/derpmap/default
+            HEADSCALE_DERP_AUTO_UPDATE_ENABLED: 'true'
+            HEADSCALE_DNS_MAGIC_DNS: 'true'
+            HEADSCALE_DNS_BASE_DOMAIN: $$cap_base_domain
+            HEADSCALE_DNS_NAMESERVERS_GLOBAL: $$cap_nameservers
+            # Database mode lets Headplane edit the ACL policy from the UI.
+            HEADSCALE_POLICY_MODE: database
+            HEADSCALE_LOG_LEVEL: info
+        caproverExtra:
+            containerHttpPort: '8080'
+            websocketSupport: 'true'
+    $$cap_appname-admin:
+        image: ghcr.io/tale/headplane:$$cap_headplane_version
+        volumes:
+            - $$cap_appname-admin-data:/var/lib/headplane
+        restart: always
+        depends_on:
+            - $$cap_appname
+        # No config.yaml is mounted: Headplane reads HEADPLANE_<SECTION>__<KEY>
+        # environment variables. Without headscale.config_path it runs in
+        # limited mode (headscale settings are managed via env, not the UI).
+        environment:
+            HEADPLANE_SERVER__HOST: 0.0.0.0
+            HEADPLANE_SERVER__PORT: '3000'
+            HEADPLANE_SERVER__BASE_URL: https://$$cap_appname-admin.$$cap_root_domain
+            HEADPLANE_SERVER__COOKIE_SECRET: $$cap_cookie_secret
+            HEADPLANE_SERVER__COOKIE_SECURE: 'true'
+            HEADPLANE_SERVER__DATA_PATH: /var/lib/headplane
+            HEADPLANE_HEADSCALE__URL: http://$$cap_appname:8080
+            HEADPLANE_HEADSCALE__PUBLIC_URL: https://$$cap_appname.$$cap_root_domain
+        caproverExtra:
+            containerHttpPort: '3000'
+caproverOneClickApp:
+    variables:
+        - id: $$cap_headscale_version
+          label: Headscale Version
+          defaultValue: 0.29.7
+          description: Tag from https://hub.docker.com/r/headscale/headscale/tags
+          validRegex: /^([^\s\/])+$/
+        - id: $$cap_headplane_version
+          label: Headplane Version
+          defaultValue: 0.8.2
+          description: Tag from https://github.com/tale/headplane/pkgs/container/headplane (no leading v). Check its supported headscale versions before upgrading.
+          validRegex: /^([^\s\/])+$/
+        - id: $$cap_base_domain
+          label: MagicDNS Base Domain
+          defaultValue: tailnet.internal
+          description: Nodes get names like host.<base domain>. Must NOT be the domain of the headscale URL or a parent of it.
+          validRegex: /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/
+        - id: $$cap_nameservers
+          label: Global DNS Servers
+          defaultValue: 1.1.1.1 1.0.0.1
+          description: Space-separated DNS servers pushed to clients
+          validRegex: /^\S+( \S+)*$/
+        - id: $$cap_cookie_secret
+          label: Headplane Cookie Secret
+          defaultValue: $$cap_gen_random_hex(32)
+          description: Must be exactly 32 characters
+          validRegex: /^.{32}$/
+    instructions:
+        start: >-
+            Headscale (self-hosted Tailscale control server) plus Headplane (web
+            admin UI).
+
+            Headscale runs at $$cap_appname and Headplane at $$cap_appname-admin.
+            Both are configured through environment variables only. Requires
+            CapRover 1.15.0 or newer.
+        end: >-
+            Headscale and Headplane are deployed.
+
+            1. Enable HTTPS for both $$cap_appname and $$cap_appname-admin.
+            Tailscale clients and Headplane's secure cookies require it.
+
+            2. Create an API key for Headplane on the server shell
+            (the headscale image has no shell, so use docker exec directly):
+
+            docker exec -it $(docker ps -qf name=$$cap_appname.1) /ko-app/headscale apikeys create --expiration 90d
+
+            3. Open https://$$cap_appname-admin.$$cap_root_domain/admin and log
+            in with that API key. Create users and pre-auth keys from the UI.
+
+            4. Connect a client:
+
+            tailscale up --login-server https://$$cap_appname.$$cap_root_domain
+    displayName: Headscale + Headplane
+    isOfficial: false
+    description: Self-hosted Tailscale control server with the Headplane web UI
+    documentation: Taken from https://headscale.net/stable/setup/install/container/ and https://github.com/tale/headplane/tree/main/docs

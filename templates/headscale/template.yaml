@@ -1,0 +1,80 @@
+captainVersion: 4
+services:
+    $$cap_appname:
+        image: headscale/headscale:$$cap_headscale_version
+        # CapRover maps `command` to the container entrypoint, so the binary
+        # path must be included (the image is distroless, built with ko).
+        command:
+            - /ko-app/headscale
+            - serve
+        volumes:
+            - $$cap_appname-data:/var/lib/headscale
+        restart: always
+        # No config.yaml is mounted: headscale falls back to defaults and reads
+        # every setting below from HEADSCALE_* environment variables.
+        environment:
+            HEADSCALE_SERVER_URL: https://$$cap_appname.$$cap_root_domain
+            HEADSCALE_LISTEN_ADDR: 0.0.0.0:8080
+            HEADSCALE_METRICS_LISTEN_ADDR: 127.0.0.1:9090
+            HEADSCALE_TRUSTED_PROXIES: 10.0.0.0/8
+            HEADSCALE_NOISE_PRIVATE_KEY_PATH: /var/lib/headscale/noise_private.key
+            HEADSCALE_PREFIXES_V4: 100.64.0.0/10
+            HEADSCALE_PREFIXES_V6: fd7a:115c:a1e0::/48
+            HEADSCALE_DATABASE_TYPE: sqlite
+            HEADSCALE_DATABASE_SQLITE_PATH: /var/lib/headscale/db.sqlite
+            HEADSCALE_DERP_URLS: https://controlplane.tailscale.com/derpmap/default
+            HEADSCALE_DERP_AUTO_UPDATE_ENABLED: 'true'
+            HEADSCALE_DNS_MAGIC_DNS: 'true'
+            HEADSCALE_DNS_BASE_DOMAIN: $$cap_base_domain
+            HEADSCALE_DNS_NAMESERVERS_GLOBAL: $$cap_nameservers
+            HEADSCALE_POLICY_MODE: database
+            HEADSCALE_LOG_LEVEL: info
+        caproverExtra:
+            containerHttpPort: '8080'
+            websocketSupport: 'true'
+caproverOneClickApp:
+    variables:
+        - id: $$cap_headscale_version
+          label: Headscale Version
+          defaultValue: 0.29.7
+          description: Tag from https://hub.docker.com/r/headscale/headscale/tags
+          validRegex: /^([^\s\/])+$/
+        - id: $$cap_base_domain
+          label: MagicDNS Base Domain
+          defaultValue: tailnet.internal
+          description: Nodes get names like host.<base domain>. Must NOT be the domain of the headscale URL or a parent of it.
+          validRegex: /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/
+        - id: $$cap_nameservers
+          label: Global DNS Servers
+          defaultValue: 1.1.1.1 1.0.0.1
+          description: Space-separated DNS servers pushed to clients
+          validRegex: /^\S+( \S+)*$/
+    instructions:
+        start: >-
+            Headscale is an open-source, self-hosted implementation of the
+            Tailscale control server.
+
+            This template runs headscale with SQLite and is configured entirely
+            through environment variables (no config.yaml needed). Requires
+            CapRover 1.15.0 or newer.
+        end: >-
+            Headscale is deployed.
+
+            1. Enable HTTPS for $$cap_appname. Tailscale clients require it.
+
+            2. Create a user and a pre-auth key from the server shell
+            (the image has no shell, so use docker exec directly):
+
+            docker exec -it $(docker ps -qf name=$$cap_appname.1) /ko-app/headscale users create myuser
+
+            docker exec -it $(docker ps -qf name=$$cap_appname.1) /ko-app/headscale preauthkeys create --user 1
+
+            3. Connect a client:
+
+            tailscale up --login-server https://$$cap_appname.$$cap_root_domain --authkey <key>
+
+            To add a web UI, deploy the "Headscale + Headplane" template instead.
+    displayName: Headscale
+    isOfficial: false
+    description: Self-hosted Tailscale control server (SQLite, env-only config)
+    documentation: Taken from https://headscale.net/stable/setup/install/container/ and https://github.com/juanfont/headscale/blob/main/config-example.yaml
