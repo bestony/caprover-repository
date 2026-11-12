@@ -160,8 +160,8 @@ caproverOneClickApp:
           validRegex: /^([^\s\/])+$/
         - id: $$cap_pg_version
           label: PostgreSQL Version
-          defaultValue: 17-alpine
-          description: Tag from https://hub.docker.com/_/postgres/tags
+          defaultValue: '17'
+          description: Tag from https://hub.docker.com/_/postgres/tags. Prefer Debian tags (17, 16, 15); alpine tags fail with "Operation not permitted" on older Docker hosts.
           validRegex: /^([^\s\/])+$/
         - id: $$cap_gotenberg_version
           label: Gotenberg Version
