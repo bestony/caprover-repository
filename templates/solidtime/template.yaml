@@ -67,7 +67,6 @@ services:
         caproverExtra:
             containerHttpPort: '8000'
     $$cap_appname-scheduler:
-        image: solidtime/solidtime:$$cap_app_version
         volumes:
             - $$cap_appname-storage:/var/www/html/storage
         restart: always
@@ -107,9 +106,13 @@ services:
             PUBLIC_FILESYSTEM_DISK: public
             GOTENBERG_URL: http://$$cap_appname-gotenberg:3000
         caproverExtra:
+            # The image HEALTHCHECK probes FrankenPHP on :2019, which only runs in
+            # http mode. Disable it so Swarm does not kill worker/scheduler tasks.
+            dockerfileLines:
+                - FROM solidtime/solidtime:$$cap_app_version
+                - HEALTHCHECK NONE
             notExposeAsWebApp: 'true'
     $$cap_appname-queue:
-        image: solidtime/solidtime:$$cap_app_version
         volumes:
             - $$cap_appname-storage:/var/www/html/storage
         restart: always
@@ -150,6 +153,11 @@ services:
             PUBLIC_FILESYSTEM_DISK: public
             GOTENBERG_URL: http://$$cap_appname-gotenberg:3000
         caproverExtra:
+            # The image HEALTHCHECK probes FrankenPHP on :2019, which only runs in
+            # http mode. Disable it so Swarm does not kill worker/scheduler tasks.
+            dockerfileLines:
+                - FROM solidtime/solidtime:$$cap_app_version
+                - HEALTHCHECK NONE
             notExposeAsWebApp: 'true'
 caproverOneClickApp:
     variables:
