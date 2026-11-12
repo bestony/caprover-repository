@@ -46,7 +46,7 @@ services:
             LOG_CHANNEL: stderr_daily
             LOG_LEVEL: info
             DB_CONNECTION: pgsql
-            DB_HOST: srv-captain--$$cap_appname-db
+            DB_HOST: $$cap_appname-db
             DB_PORT: '5432'
             DB_SSL_MODE: prefer
             DB_DATABASE: $$cap_db_name
@@ -63,7 +63,7 @@ services:
             QUEUE_CONNECTION: database
             FILESYSTEM_DISK: local
             PUBLIC_FILESYSTEM_DISK: public
-            GOTENBERG_URL: http://srv-captain--$$cap_appname-gotenberg:3000
+            GOTENBERG_URL: http://$$cap_appname-gotenberg:3000
         caproverExtra:
             containerHttpPort: '8000'
     $$cap_appname-scheduler:
@@ -88,7 +88,7 @@ services:
             LOG_CHANNEL: stderr_daily
             LOG_LEVEL: info
             DB_CONNECTION: pgsql
-            DB_HOST: srv-captain--$$cap_appname-db
+            DB_HOST: $$cap_appname-db
             DB_PORT: '5432'
             DB_SSL_MODE: prefer
             DB_DATABASE: $$cap_db_name
@@ -105,7 +105,7 @@ services:
             QUEUE_CONNECTION: database
             FILESYSTEM_DISK: local
             PUBLIC_FILESYSTEM_DISK: public
-            GOTENBERG_URL: http://srv-captain--$$cap_appname-gotenberg:3000
+            GOTENBERG_URL: http://$$cap_appname-gotenberg:3000
         caproverExtra:
             notExposeAsWebApp: 'true'
     $$cap_appname-queue:
@@ -131,7 +131,7 @@ services:
             LOG_CHANNEL: stderr_daily
             LOG_LEVEL: info
             DB_CONNECTION: pgsql
-            DB_HOST: srv-captain--$$cap_appname-db
+            DB_HOST: $$cap_appname-db
             DB_PORT: '5432'
             DB_SSL_MODE: prefer
             DB_DATABASE: $$cap_db_name
@@ -148,7 +148,7 @@ services:
             QUEUE_CONNECTION: database
             FILESYSTEM_DISK: local
             PUBLIC_FILESYSTEM_DISK: public
-            GOTENBERG_URL: http://srv-captain--$$cap_appname-gotenberg:3000
+            GOTENBERG_URL: http://$$cap_appname-gotenberg:3000
         caproverExtra:
             notExposeAsWebApp: 'true'
 caproverOneClickApp:
@@ -242,7 +242,7 @@ caproverOneClickApp:
             First boot can take a minute while migrations run. If the scheduler or
             queue started before the database was ready, restart them once.
 
-            Database (internal): srv-captain--$$cap_appname-db:5432
+            Database (internal): $$cap_appname-db:5432
     displayName: solidtime
     isOfficial: false
     description: Open-source time tracker with PostgreSQL, scheduler, queue worker, and Gotenberg

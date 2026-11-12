@@ -25,7 +25,7 @@ services:
             TRUSTED_HOSTS: ^(localhost|127\.0\.0\.1|$$cap_appname\.$$cap_root_domain)$
             ADMINMAIL: $$cap_admin_email
             ADMINPASS: $$cap_admin_password
-            DATABASE_URL: mysql://$$cap_db_user:$$cap_db_pass@srv-captain--$$cap_appname-db:3306/$$cap_db_name?charset=utf8mb4&serverVersion=$$cap_mysql_server_version
+            DATABASE_URL: mysql://$$cap_db_user:$$cap_db_pass@$$cap_appname-db:3306/$$cap_db_name?charset=utf8mb4&serverVersion=$$cap_mysql_server_version
         caproverExtra:
             containerHttpPort: '8001'
 caproverOneClickApp:
@@ -101,7 +101,7 @@ caproverOneClickApp:
             a minute. If you add a custom domain, update TRUSTED_HOSTS in the app
             environment to include it.
 
-            Database (internal): srv-captain--$$cap_appname-db:3306
+            Database (internal): $$cap_appname-db:3306
     displayName: Kimai
     isOfficial: false
     description: Open-source time tracking (Kimai 2) with MySQL
