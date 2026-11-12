@@ -33,8 +33,8 @@ caproverOneClickApp:
         - id: $$cap_app_version
           label: Kimai Version
           defaultValue: 2.71.0
-          description: Tag from https://hub.docker.com/r/kimai/kimai2/tags (numeric tags since 2.58.0 are the Apache image; do not use fpm)
-          validRegex: /^([^\s\/])+$/
+          description: Numeric tag (e.g. 2.71.0) or "apache" from https://hub.docker.com/r/kimai/kimai2/tags. Numeric tags since 2.58.0 are the Apache image; "latest" and "fpm" tags are FPM-only and will return 502
+          validRegex: /^(\d+(\.\d+){0,2}|apache)$/
         - id: $$cap_mysql_version
           label: MySQL Version
           defaultValue: '8.4'
