@@ -1,0 +1,108 @@
+captainVersion: 4
+services:
+    $$cap_appname-db:
+        image: mysql:$$cap_mysql_version
+        volumes:
+            - $$cap_appname-db-data:/var/lib/mysql
+        restart: always
+        environment:
+            MYSQL_DATABASE: $$cap_db_name
+            MYSQL_USER: $$cap_db_user
+            MYSQL_PASSWORD: $$cap_db_pass
+            MYSQL_ROOT_PASSWORD: $$cap_db_root_pass
+        caproverExtra:
+            notExposeAsWebApp: 'true'
+    $$cap_appname:
+        image: kimai/kimai2:$$cap_app_version
+        volumes:
+            - $$cap_appname-data:/opt/kimai/var/data
+            - $$cap_appname-plugins:/opt/kimai/var/plugins
+        restart: always
+        depends_on:
+            - $$cap_appname-db
+        environment:
+            APP_SECRET: $$cap_app_secret
+            TRUSTED_HOSTS: ^(localhost|127\.0\.0\.1|$$cap_appname\.$$cap_root_domain)$
+            ADMINMAIL: $$cap_admin_email
+            ADMINPASS: $$cap_admin_password
+            DATABASE_URL: mysql://$$cap_db_user:$$cap_db_pass@srv-captain--$$cap_appname-db:3306/$$cap_db_name?charset=utf8mb4&serverVersion=$$cap_mysql_server_version
+        caproverExtra:
+            containerHttpPort: '8001'
+caproverOneClickApp:
+    variables:
+        - id: $$cap_app_version
+          label: Kimai Version
+          defaultValue: 2.71.0
+          description: Tag from https://hub.docker.com/r/kimai/kimai2/tags (numeric tags since 2.58.0 are the Apache image; do not use fpm)
+          validRegex: /^([^\s\/])+$/
+        - id: $$cap_mysql_version
+          label: MySQL Version
+          defaultValue: '8.4'
+          description: Tag from https://hub.docker.com/_/mysql/tags
+          validRegex: /^([^\s\/])+$/
+        - id: $$cap_mysql_server_version
+          label: MySQL Server Version (for Doctrine)
+          defaultValue: 8.4.0
+          description: Full version matching the MySQL image above, used in DATABASE_URL serverVersion
+          validRegex: /^[0-9]+\.[0-9]+\.[0-9]+$/
+        - id: $$cap_db_name
+          label: Database Name
+          defaultValue: kimai
+          description: MySQL database name
+          validRegex: /^[A-Za-z0-9_]+$/
+        - id: $$cap_db_user
+          label: Database User
+          defaultValue: kimai
+          description: MySQL username
+          validRegex: /^[A-Za-z0-9_]+$/
+        - id: $$cap_db_pass
+          label: Database Password
+          defaultValue: $$cap_gen_random_hex(24)
+          description: 'MySQL user password. It is part of DATABASE_URL, so avoid @, :, /, ?, #, &, and %.'
+          validRegex: /^[^\s@:/?#&%]{12,}$/
+        - id: $$cap_db_root_pass
+          label: Database Root Password
+          defaultValue: $$cap_gen_random_hex(24)
+          description: MySQL root password
+          validRegex: /^[^\s]{12,}$/
+        - id: $$cap_app_secret
+          label: App Secret
+          defaultValue: $$cap_gen_random_hex(32)
+          description: Symfony APP_SECRET. Keep it stable after the first deploy.
+          validRegex: /^.{16,}$/
+        - id: $$cap_admin_email
+          label: Admin Email
+          defaultValue: admin@example.com
+          description: Login email of the initial super admin account
+          validRegex: /.+@.+/
+        - id: $$cap_admin_password
+          label: Admin Password
+          defaultValue: $$cap_gen_random_hex(16)
+          description: Initial super admin password (min 8 characters). Save it before leaving this form.
+          validRegex: /^[^\s]{8,}$/
+    instructions:
+        start: >-
+            Kimai is an open-source time-tracking app for freelancers and teams.
+
+            This template deploys the official Kimai Apache image with MySQL. The
+            deprecated FPM image is not used, so no separate web server or
+            public-assets volume is needed.
+
+            Save the admin email and password before continuing.
+        end: >-
+            Kimai is deployed.
+
+            1. Enable HTTPS for $$cap_appname.
+
+            2. Open https://$$cap_appname.$$cap_root_domain and log in with the
+            admin email and password you set.
+
+            The first boot waits for MySQL and installs the schema, which can take
+            a minute. If you add a custom domain, update TRUSTED_HOSTS in the app
+            environment to include it.
+
+            Database (internal): srv-captain--$$cap_appname-db:3306
+    displayName: Kimai
+    isOfficial: false
+    description: Open-source time tracking (Kimai 2) with MySQL
+    documentation: Taken from https://www.kimai.org/documentation/docker-compose.html
