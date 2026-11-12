@@ -21,7 +21,7 @@ services:
         environment:
             AUTO_INSTALL: 'true'
             DB_TYPE: postgres
-            DB_HOST: srv-captain--$$cap_appname-db:5432
+            DB_HOST: $$cap_appname-db:5432
             DB_NAME: $$cap_db_name
             DB_USERNAME: $$cap_db_user
             DB_PASSWORD: $$cap_db_pass
@@ -107,7 +107,7 @@ caproverOneClickApp:
             Awesome Answer is deployed.
 
             Site: https://$$cap_appname.$$cap_root_domain
-            Database (internal): srv-captain--$$cap_appname-db:5432
+            Database (internal): $$cap_appname-db:5432
             Login with the admin username and password you set.
 
             Enable HTTPS. If AUTO_INSTALL did not finish because PostgreSQL was

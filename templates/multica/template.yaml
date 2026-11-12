@@ -19,7 +19,7 @@ services:
         depends_on:
             - $$cap_appname-db
         environment:
-            DATABASE_URL: postgres://$$cap_db_user:$$cap_db_pass@srv-captain--$$cap_appname-db:5432/$$cap_db_name?sslmode=disable
+            DATABASE_URL: postgres://$$cap_db_user:$$cap_db_pass@$$cap_appname-db:5432/$$cap_db_name?sslmode=disable
             PORT: '8080'
             APP_ENV: production
             JWT_SECRET: $$cap_jwt_secret
@@ -48,7 +48,7 @@ services:
             - $$cap_appname-backend
         environment:
             HOSTNAME: '0.0.0.0'
-            REMOTE_API_URL: http://srv-captain--$$cap_appname-backend:8080
+            REMOTE_API_URL: http://$$cap_appname-backend:8080
         caproverExtra:
             containerHttpPort: '3000'
             websocketSupport: 'true'
@@ -127,7 +127,7 @@ caproverOneClickApp:
 
             Web UI: https://$$cap_appname.$$cap_root_domain
             API / CLI: https://$$cap_appname-backend.$$cap_root_domain
-            Database (internal): srv-captain--$$cap_appname-db:5432
+            Database (internal): $$cap_appname-db:5432
 
             Enable HTTPS and keep WebSocket support on for both web apps.
             If email is not configured, copy the login code from the backend
@@ -140,7 +140,7 @@ caproverOneClickApp:
 
             Browser HTTP calls are proxied by the web app. Real-time /ws is not
             — if live updates fail, add an nginx location /ws on the web app
-            that proxies to http://srv-captain--$$cap_appname-backend:8080
+            that proxies to http://$$cap_appname-backend:8080
             (see https://github.com/multica-ai/multica/blob/main/SELF_HOSTING_ADVANCED.md).
     displayName: Multica
     isOfficial: false

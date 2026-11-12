@@ -16,7 +16,7 @@ services:
         depends_on:
             - $$cap_appname-db
         environment:
-            DATABASE_URL: postgresql://$$cap_db_user:$$cap_db_pass@srv-captain--$$cap_appname-db:5432/$$cap_db_name
+            DATABASE_URL: postgresql://$$cap_db_user:$$cap_db_pass@$$cap_appname-db:5432/$$cap_db_name
             BETTER_AUTH_SECRET: $$cap_better_auth_secret
             BETTER_AUTH_URL: https://$$cap_appname.$$cap_root_domain
             MCP_OAUTH_ENABLED: $$cap_mcp_oauth_enabled
@@ -33,7 +33,7 @@ services:
             - $$cap_appname-db
             - $$cap_appname-migrate
         environment:
-            DATABASE_URL: postgresql://$$cap_db_user:$$cap_db_pass@srv-captain--$$cap_appname-db:5432/$$cap_db_name
+            DATABASE_URL: postgresql://$$cap_db_user:$$cap_db_pass@$$cap_appname-db:5432/$$cap_db_name
             BETTER_AUTH_SECRET: $$cap_better_auth_secret
             BETTER_AUTH_URL: https://$$cap_appname.$$cap_root_domain
             MCP_OAUTH_ENABLED: $$cap_mcp_oauth_enabled
@@ -120,7 +120,7 @@ caproverOneClickApp:
             MCP: https://$$cap_appname.$$cap_root_domain/mcp
             Privacy: https://$$cap_appname.$$cap_root_domain/privacy
             Terms: https://$$cap_appname.$$cap_root_domain/terms
-            Database (internal): srv-captain--$$cap_appname-db:5432
+            Database (internal): $$cap_appname-db:5432
 
             Enable HTTPS. If the site errors on first boot, wait for the migrate app
             to finish (it then sleeps) and restart the web app.
