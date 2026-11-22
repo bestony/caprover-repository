@@ -1,0 +1,192 @@
+captainVersion: 4
+services:
+    $$cap_appname-db:
+        caproverExtra:
+            notExposeAsWebApp: 'true'
+            dockerfileLines:
+                - FROM postgres:$$cap_pg_version
+                - RUN echo 'CREATE EXTENSION IF NOT EXISTS pg_stat_statements;' > /docker-entrypoint-initdb.d/10-pg-stat-statements.sql
+        volumes:
+            - $$cap_appname-db-data:/var/lib/postgresql/data
+        restart: always
+        environment:
+            POSTGRES_DB: $$cap_db_name
+            POSTGRES_USER: $$cap_db_user
+            POSTGRES_PASSWORD: $$cap_db_pass
+            # glibc image + builtin locale provider matches Neon/managed PG collation
+            POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale-provider=builtin --builtin-locale=C.UTF-8 --data-checksums"
+        # CapRover maps `command` to the container entrypoint, so
+        # docker-entrypoint.sh must stay first for initdb/initdb.d to run.
+        command:
+            - docker-entrypoint.sh
+            - postgres
+            - -c
+            - max_connections=$$cap_max_connections
+            - -c
+            - shared_buffers=$$cap_shared_buffers
+            - -c
+            - effective_cache_size=$$cap_effective_cache_size
+            - -c
+            - work_mem=16MB
+            - -c
+            - maintenance_work_mem=256MB
+            - -c
+            - random_page_cost=1.1
+            - -c
+            - effective_io_concurrency=200
+            - -c
+            - wal_level=replica
+            - -c
+            - max_wal_size=2GB
+            - -c
+            - checkpoint_completion_target=0.9
+            - -c
+            - idle_in_transaction_session_timeout=60s
+            - -c
+            - log_min_duration_statement=500ms
+            - -c
+            - log_lock_waits=on
+            - -c
+            - timezone=UTC
+            - -c
+            - shared_preload_libraries=pg_stat_statements
+    $$cap_appname-pgbouncer:
+        image: edoburu/pgbouncer:$$cap_pgbouncer_version
+        restart: always
+        depends_on:
+            - $$cap_appname-db
+        volumes:
+            - $$cap_appname-certs:/etc/pgbouncer/certs:ro
+        environment:
+            # Entrypoint expands this URL into a [databases] entry + userlist.txt
+            DATABASE_URL: "postgres://$$cap_db_user:$$cap_db_pass@$$cap_appname-db:5432/$$cap_db_name"
+            LISTEN_PORT: '6432'
+            AUTH_TYPE: scram-sha-256
+            POOL_MODE: $$cap_pool_mode
+            MAX_CLIENT_CONN: "$$cap_max_client_conn"
+            DEFAULT_POOL_SIZE: "$$cap_default_pool_size"
+            RESERVE_POOL_SIZE: '5'
+            RESERVE_POOL_TIMEOUT: '3'
+            MAX_PREPARED_STATEMENTS: '200'
+            SERVER_IDLE_TIMEOUT: '300'
+            CLIENT_IDLE_TIMEOUT: '0'
+            QUERY_WAIT_TIMEOUT: '30'
+            IGNORE_STARTUP_PARAMETERS: "extra_float_digits,options"
+            ADMIN_USERS: $$cap_db_user
+            STATS_USERS: $$cap_db_user
+            LOG_CONNECTIONS: '0'
+            LOG_DISCONNECTIONS: '0'
+        ports:
+            - "$$cap_public_port:6432"
+        caproverExtra:
+            notExposeAsWebApp: 'true'
+caproverOneClickApp:
+    variables:
+        - id: $$cap_pg_version
+          label: PostgreSQL Version
+          defaultValue: 18-bookworm
+          description: >-
+              postgres image tag. Keep a -bookworm (glibc) tag so collation matches
+              Neon/managed PG — alpine/musl sorts differently. https://hub.docker.com/_/postgres/tags
+          validRegex: /^([^\s\/])+$/
+        - id: $$cap_pgbouncer_version
+          label: PgBouncer Version
+          defaultValue: v1.26.1-p0
+          description: Tag from https://hub.docker.com/r/edoburu/pgbouncer/tags
+          validRegex: /^([^\s\/])+$/
+        - id: $$cap_db_name
+          label: Database Name
+          defaultValue: appdb
+          description: PostgreSQL database name (also the PgBouncer pool name)
+          validRegex: /^[A-Za-z][A-Za-z0-9_]*$/
+        - id: $$cap_db_user
+          label: Database User
+          defaultValue: appuser
+          description: PostgreSQL superuser created at initdb; also the PgBouncer login user
+          validRegex: /^[A-Za-z][A-Za-z0-9_]*$/
+        - id: $$cap_db_pass
+          label: Database Password
+          defaultValue: $$cap_gen_random_hex(24)
+          description: 'Used inside a postgres:// URL. Avoid @, :, /, ?, #, and %.'
+          validRegex: /^[^\s@:/?#%]{12,}$/
+        - id: $$cap_public_port
+          label: PgBouncer Host Port
+          defaultValue: '6432'
+          description: >-
+              Published on the host (0.0.0.0) so external clients can reach the pooler.
+              Restrict it with your firewall/security group. Remove the port mapping in
+              App Configs if you only need internal access.
+          validRegex: /^[0-9]{2,5}$/
+        - id: $$cap_pool_mode
+          label: PgBouncer Pool Mode
+          defaultValue: transaction
+          description: 'transaction for serverless/short-lived clients; session for migrations, LISTEN/NOTIFY or advisory locks'
+          validRegex: /^(session|transaction|statement)$/
+        - id: $$cap_default_pool_size
+          label: Default Pool Size
+          defaultValue: '20'
+          description: Server connections PgBouncer keeps open per user/database pair
+          validRegex: /^[0-9]+$/
+        - id: $$cap_max_client_conn
+          label: Max Client Connections
+          defaultValue: '1000'
+          description: Maximum simultaneous client connections accepted by PgBouncer
+          validRegex: /^[0-9]+$/
+        - id: $$cap_max_connections
+          label: PG max_connections
+          defaultValue: '60'
+          description: Keep above default_pool_size + reserve_pool_size(5) + admin headroom
+          validRegex: /^[0-9]+$/
+        - id: $$cap_shared_buffers
+          label: PG shared_buffers
+          defaultValue: 512MB
+          description: '~25% of RAM is the usual starting point (e.g. 512MB, 1GB, 2GB)'
+          validRegex: /^[0-9]+(kB|MB|GB|TB)$/
+        - id: $$cap_effective_cache_size
+          label: PG effective_cache_size
+          defaultValue: 2GB
+          description: Planner's estimate of OS page cache + shared_buffers (e.g. 2GB, 4GB)
+          validRegex: /^[0-9]+(kB|MB|GB|TB)$/
+    instructions:
+        start: >-
+            Deploys PostgreSQL (default 18, bookworm/glibc, builtin C.UTF-8 locale
+            provider, data checksums — collation-compatible with Neon and other
+            managed Postgres) behind a PgBouncer connection pooler listening on 6432.
+
+            PgBouncer is published on a host port so clients outside CapRover
+            (serverless functions, other servers) can connect. SCRAM-SHA-256 is used
+            for both client and server authentication. Open your firewall / cloud
+            security group for the host port only — Postgres itself is never published.
+
+            POSTGRES_INITDB_ARGS only apply when the data volume is first initialized.
+        end: >-
+            PostgreSQL + PgBouncer is deployed.
+
+            App DSN (pooled): postgres://$$cap_db_user:<password>@<server-ip-or-dns>:$$cap_public_port/$$cap_db_name
+
+            Same-app services: $$cap_appname-pgbouncer:6432
+
+            Other CapRover apps: srv-captain--$$cap_appname-pgbouncer:6432
+
+            Direct Postgres (internal only, not published): $$cap_appname-db:5432
+
+            PgBouncer admin console: psql to database "pgbouncer" on the same port as $$cap_db_user.
+
+            TLS for external clients: put fullchain.pem + privkey.pem into the
+            $$cap_appname-certs volume, then add env vars on the pgbouncer service —
+            CLIENT_TLS_SSLMODE=require, CLIENT_TLS_CERT_FILE=/etc/pgbouncer/certs/fullchain.pem,
+            CLIENT_TLS_KEY_FILE=/etc/pgbouncer/certs/privkey.pem — and redeploy.
+
+            Need a second logical pool with a different name or mode (e.g. a session-mode
+            "<db>_direct" for migrations)? Env config maps pool name = database name, so
+            replace the pgbouncer image with caproverExtra.dockerfileLines that writes a
+            custom pgbouncer.ini + userlist.txt instead.
+    displayName: PostgreSQL 18 + PgBouncer
+    isOfficial: false
+    description: >-
+        PostgreSQL (default 18, glibc, builtin C.UTF-8 locale) behind PgBouncer with
+        SCRAM auth and pooling — a managed-PG-style endpoint published on host port 6432
+    documentation: >-
+        Adapted from a Neon→self-hosted migration runbook. Images: postgres
+        (https://hub.docker.com/_/postgres) and edoburu/pgbouncer
+        (https://github.com/edoburu/docker-pgbouncer — env-var driven config).
