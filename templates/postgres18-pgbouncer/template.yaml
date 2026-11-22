@@ -6,8 +6,11 @@ services:
             dockerfileLines:
                 - FROM postgres:$$cap_pg_version
                 - RUN echo 'CREATE EXTENSION IF NOT EXISTS pg_stat_statements;' > /docker-entrypoint-initdb.d/10-pg-stat-statements.sql
+        # PG18+ keeps data in a versioned subdir ($PGDATA=/var/lib/postgresql/18/docker)
+        # and refuses to start if a volume sits on the legacy .../data mount point.
+        # Mounting one level up keeps pg_upgrade --link within a single mount.
         volumes:
-            - $$cap_appname-db-data:/var/lib/postgresql/data
+            - $$cap_appname-db-data:/var/lib/postgresql
         restart: always
         environment:
             POSTGRES_DB: $$cap_db_name
