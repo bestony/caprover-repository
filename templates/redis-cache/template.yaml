@@ -1,0 +1,75 @@
+captainVersion: 4
+services:
+    $$cap_appname:
+        image: redis:$$cap_redis_version
+        restart: always
+        volumes:
+            - $$cap_appname-data:/data
+        environment:
+            # Lets redis-cli inside the container authenticate without -a
+            REDISCLI_AUTH: $$cap_redis_pass
+        # CapRover maps `command` to the container entrypoint, so
+        # docker-entrypoint.sh must stay first.
+        command:
+            - docker-entrypoint.sh
+            - redis-server
+            - --requirepass
+            - $$cap_redis_pass
+            - --maxmemory
+            - $$cap_maxmemory
+            - --maxmemory-policy
+            - allkeys-lru
+            # Cache workload: one RDB snapshot per hour if anything changed, no AOF
+            - --save
+            - '3600 1'
+            - --appendonly
+            - 'no'
+        healthcheck:
+            test: ['CMD', 'redis-cli', 'ping']
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        caproverExtra:
+            notExposeAsWebApp: 'true'
+caproverOneClickApp:
+    variables:
+        - id: $$cap_redis_version
+          label: Redis Version
+          defaultValue: 8-alpine
+          description: Tag from https://hub.docker.com/_/redis/tags
+          validRegex: /^([^\s\/])+$/
+        - id: $$cap_redis_pass
+          label: Redis Password
+          defaultValue: $$cap_gen_random_hex(32)
+          description: 'Used in redis:// URLs. Avoid @, :, /, ?, #, % and whitespace.'
+          validRegex: /^[^\s@:/?#%]{12,}$/
+        - id: $$cap_maxmemory
+          label: maxmemory
+          defaultValue: 512mb
+          description: >-
+              Memory cap before allkeys-lru eviction kicks in. 512mb fits ~2 weeks of a
+              ~232 MB Solid Cache dataset (~360 MB raw in Redis) with LRU keeping only hot keys resident.
+          validRegex: /^[0-9]+(kb|mb|gb)$/
+    instructions:
+        start: >-
+            Deploys a password-protected Redis tuned as an LRU cache:
+            maxmemory 512mb (configurable), maxmemory-policy allkeys-lru,
+            save 3600 1, appendonly no.
+
+            Not published on a host port — reachable only from other CapRover apps.
+        end: >-
+            Redis cache is deployed.
+
+            URL for other CapRover apps: redis://:<password>@srv-captain--$$cap_appname:6379/0
+
+            Change maxmemory later via App Configs → redeploy, or live with
+            redis-cli CONFIG SET maxmemory <size>.
+    displayName: Redis Cache (LRU)
+    isOfficial: false
+    description: >-
+        Password-protected Redis configured as a cache — maxmemory 512mb,
+        allkeys-lru eviction, hourly RDB snapshot, AOF off
+    documentation: >-
+        Official redis image (https://hub.docker.com/_/redis). Sizing: Solid Cache
+        holds ~232 MB over two weeks; Redis overhead (value ×1.3 + ~60 MB keys) ≈ 360 MB
+        if fully resident, and LRU keeps mostly recent hot data, so 512mb is ample.
